@@ -13,6 +13,20 @@ var startCmd = &cobra.Command{
 	Short: "Start a new flight recording session",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		active, err := state.HasActiveSession()
+		if err != nil {
+			return err
+		}
+
+		if active {
+			session, err := state.LoadSession()
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("A recording is already active: %s\n", session.Name)
+			return nil
+		}
 		session := state.Session{
 			Name:      args[0],
 			StartedAt: time.Now(),

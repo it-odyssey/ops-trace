@@ -1,18 +1,18 @@
-# OpsTrace
+# WakeTrail
 
 **A black box flight recorder for DevOps work.**
 
-OpsTrace records the sequence of commands, state changes, and failures that occur during an engineering session so you can reconstruct exactly what happened when troubleshooting infrastructure or systems.
+WakeTrail records the sequence of commands, state changes, and failures that occur during an engineering session so you can reconstruct exactly what happened when troubleshooting infrastructure or systems.
 
 The goal is simple:
 
 > When something breaks, you should not have to rely on memory to figure out what changed.
 
-## Why OpsTrace?
+## Why WakeTrail?
 
 Traditional shell history tells you what commands were entered, but not the full operational context around them.
 
-OpsTrace is designed to capture a richer timeline, including:
+WakeTrail is designed to capture a richer timeline, including:
 
 - command executed
 - timestamp
@@ -39,14 +39,14 @@ Future adapters are planned for tools such as:
 
 ## Current Status
 
-OpsTrace is in early development.
+WakeTrail is in early development.
 
 The current CLI supports:
 
 ```bash
-opstrace start <session-name>
-opstrace status
-opstrace stop
+waketrail start <session-name>
+waketrail status
+waketrail stop
 
 The Bash integration can currently detect user commands and capture exit codes.
 
@@ -54,7 +54,7 @@ Persistent command event storage and the Omarchy plugin are under active develop
 
 Project Goals
 
-OpsTrace is being built around a few core principles:
+WakeTrail is being built around a few core principles:
 
 Local first — no cloud account required
 Low friction — work normally while recording
@@ -63,7 +63,7 @@ Modular architecture — collectors and integrations remain independent
 Open source — designed for real-world DevOps and Linux workflows
 Omarchy native — includes an Omarchy plugin for session control and timeline visibility
 Planned Architecture
-OpsTrace
+WakeTrail
 │
 ├── CLI / recorder core
 ├── shell integrations
@@ -82,7 +82,7 @@ OpsTrace
     └── incident timeline
 Development
 
-OpsTrace is currently developed in Go.
+WakeTrail is currently developed in Go.
 
 Run locally with:
 
@@ -110,7 +110,7 @@ Initial milestones:
 
 Project
 
-OpsTrace is an IT Odyssey project.
+WakeTrail is an IT Odyssey project.
 
 Seek Always A New Horizon.
 

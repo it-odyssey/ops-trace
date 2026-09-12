@@ -8,8 +8,8 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "flight",
-	Short: "A black box flight recorder for DevOps work",
+	Use:   "waketrail",
+	Short: "A local forensic timeline for DevOps work",
 }
 
 func Execute() {

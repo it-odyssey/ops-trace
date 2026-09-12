@@ -1,6 +1,6 @@
 package main
 
-import "github.com/it-odyssey/ops-trace/cmd"
+import "github.com/it-odyssey/waketrail/cmd"
 
 func main() {
 	cmd.Execute()

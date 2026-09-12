@@ -1,4 +1,4 @@
-module github.com/it-odyssey/ops-trace
+module github.com/it-odyssey/waketrail
 
 go 1.27.0
 

@@ -201,4 +201,4 @@ WakeTrail is an open-source project from **IT Odyssey**.
 
 ## License
 
-License information will be added before the first tagged release.
+WakeTrail is licensed under the [Apache License 2.0](LICENSE).

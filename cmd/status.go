@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/Jeff-Fontenot/flight-recorder/internal/state"
+	"github.com/it-odyssey/ops-trace/internal/state"
 	"github.com/spf13/cobra"
 )
 

@@ -1,4 +1,4 @@
-module github.com/Jeff-Fontenot/flight-recorder
+module github.com/it-odyssey/ops-trace
 
 go 1.27.0
 

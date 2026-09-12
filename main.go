@@ -1,6 +1,6 @@
 package main
 
-import "github.com/Jeff-Fontenot/flight-recorder/cmd"
+import "github.com/it-odyssey/ops-trace/cmd"
 
 func main() {
 	cmd.Execute()

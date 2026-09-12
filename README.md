@@ -1,41 +1,98 @@
 # WakeTrail
 
-**A black box flight recorder for DevOps work.**
+**A local forensic timeline for DevOps work.**
 
-WakeTrail records the sequence of commands, state changes, and failures that occur during an engineering session so you can reconstruct exactly what happened when troubleshooting infrastructure or systems.
+**Record the wake your changes leave behind.**
+
+WakeTrail records and correlates engineering activity with the state changes that follow it, creating a chronological record of what happened during a troubleshooting, deployment, or infrastructure session.
 
 The goal is simple:
 
-> When something breaks, you should not have to rely on memory to figure out what changed.
+> When something breaks, you should be able to reconstruct what you did, what changed, and what happened next.
 
 ## Why WakeTrail?
 
-Traditional shell history tells you what commands were entered, but not the full operational context around them.
+Traditional shell history can tell you which commands were entered.
 
-WakeTrail is designed to capture a richer timeline, including:
+Terminal recorders can show you what appeared on the screen.
 
-- command executed
-- timestamp
-- working directory
-- exit code
+Observability platforms can tell you what a running system is doing.
+
+WakeTrail is intended to connect those perspectives.
+
+A WakeTrail session can eventually correlate:
+
+- commands executed
+- timestamps
+- working directories
+- exit codes
 - execution duration
-- Git repository state
-- branch and commit
+- Git repository, branch, and commit state
 - changed files
-- service and container health
-- incident markers
-- environment changes
+- Docker and container health
+- systemd service state
+- infrastructure changes
+- Kubernetes state transitions
+- Terraform / OpenTofu operations
+- relevant logs and journal events
+- manually marked incidents
+- recovery events
 
-Future adapters are planned for tools such as:
+The result is a forensic timeline of engineering work rather than simply a command history.
 
-- Docker / Docker Compose
-- systemd
-- Kubernetes
-- Terraform / OpenTofu
-- Ansible
-- AWS CLI
-- Azure CLI
-- GitHub CLI
+## Example
+
+A future WakeTrail timeline might look like:
+
+```text
+14:31:08  SESSION START
+           homelab-rebuild
+
+14:32:14  $ terraform apply
+           exit: 0
+           duration: 18.2s
+
+           git:
+             branch: tailscale-rebuild
+             commit: 85bc21a
+             dirty: yes
+
+           terraform:
+             +3 created
+             ~2 changed
+
+14:34:03  $ docker compose up -d
+           exit: 0
+
+14:34:09  SERVICE STATE CHANGE
+           traefik: healthy → restarting
+
+14:34:24  SERVICE STATE CHANGE
+           traefik: restarting → unhealthy
+
+14:35:02  INCIDENT
+           "Traefik stopped responding"
+
+14:37:41  $ docker compose restart traefik
+           exit: 0
+
+14:37:48  SERVICE RECOVERED
+           traefik: unhealthy → healthy
+```
+
+The commands are important, but the changes they caused are the real story.
+
+## What WakeTrail Is Not
+
+WakeTrail is not intended to replace:
+
+- shell-history tools such as Atuin
+- terminal-session recorders
+- distributed tracing systems
+- log aggregation platforms
+- general-purpose observability stacks
+
+WakeTrail focuses specifically on reconstructing the timeline of engineering actions and their effects on a local or managed environment.
 
 ## Current Status
 
@@ -47,51 +104,76 @@ The current CLI supports:
 waketrail start <session-name>
 waketrail status
 waketrail stop
+```
 
-The Bash integration can currently detect user commands and capture exit codes.
+The Bash integration can detect interactive commands and capture their exit status.
 
-Persistent command event storage and the Omarchy plugin are under active development.
+Persistent command-event storage and richer environment correlation are currently under development.
 
-Project Goals
+## Design Principles
 
 WakeTrail is being built around a few core principles:
 
-Local first — no cloud account required
-Low friction — work normally while recording
-Forensic visibility — reconstruct what happened after a failure
-Modular architecture — collectors and integrations remain independent
-Open source — designed for real-world DevOps and Linux workflows
-Omarchy native — includes an Omarchy plugin for session control and timeline visibility
-Planned Architecture
+- **Local first** — no cloud account or external service required
+- **Low friction** — record work without changing normal command-line habits
+- **Forensic context** — capture what changed, not just what was typed
+- **Chronological correlation** — reconstruct cause, effect, failure, and recovery
+- **Modular architecture** — integrations remain independent of the recorder core
+- **Open source** — built for real Linux and DevOps workflows
+- **Omarchy native** — provide a native Omarchy interface while remaining useful outside Omarchy
+
+## Planned Architecture
+
+```text
 WakeTrail
 │
 ├── CLI / recorder core
+│
 ├── shell integrations
-├── local event storage
+│   └── Bash
+│
+├── local event store
+│
+├── timeline engine
+│
 ├── collectors
 │   ├── Git
-│   ├── Docker
+│   ├── Docker / Compose
 │   ├── systemd
 │   ├── Kubernetes
-│   └── Terraform
+│   ├── Terraform / OpenTofu
+│   └── logs / journal
+│
+├── incident capture
+│   ├── markers
+│   ├── snapshots
+│   └── exports
 │
 └── Omarchy plugin
     ├── recording indicator
     ├── session controls
     ├── recent events
-    └── incident timeline
-Development
+    ├── failures
+    └── session timeline
+```
 
-WakeTrail is currently developed in Go.
+## Development
 
-Run locally with:
+WakeTrail is written in Go.
 
+Run locally:
+
+```bash
 go run .
+```
 
-Run all tests with:
+Run all tests:
 
+```bash
 go test ./...
-Roadmap
+```
+
+## Roadmap
 
 Initial milestones:
 
@@ -104,16 +186,19 @@ Initial milestones:
 - [ ] SQLite event storage
 - [ ] Session timeline output
 - [ ] Incident markers
+- [ ] Incident snapshot / export
 - [ ] Omarchy plugin
 - [ ] Docker / systemd collectors
 - [ ] Terraform / Kubernetes adapters
+- [ ] Secret and sensitive-data redaction
+- [ ] Additional shell support
 
-Project
+## IT Odyssey
 
-WakeTrail is an IT Odyssey project.
+WakeTrail is an open-source project from **IT Odyssey**.
 
-Seek Always A New Horizon.
+**Seek Always A New Horizon.**
 
-License
+## License
 
 License information will be added before the first tagged release.

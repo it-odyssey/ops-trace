@@ -9,7 +9,7 @@ import (
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Show the current flight recording session",
+	Short: "Show the current Waketrail recording session",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		active, err := state.HasActiveSession()
 		if err != nil {

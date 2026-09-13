@@ -11,7 +11,7 @@ import (
 
 var startCmd = &cobra.Command{
 	Use:   "start [session-name]",
-	Short: "Start a new flight recording session",
+	Short: "Start a new Waketrail recording session",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		store, err := storage.Open()

@@ -182,11 +182,11 @@ Initial milestones:
 - [x] CLI foundation
 - [x] Session start / status / stop
 - [x] Bash command capture prototype
-- [ ] Persistent command events
-- [ ] Execution duration tracking
+- [x] Persistent command events
+- [x] Execution duration tracking
 - [ ] Git context capture
-- [ ] SQLite event storage
-- [ ] Session timeline output
+- [x] SQLite event storage
+- [x] Session timeline output
 - [ ] Incident markers
 - [ ] Incident snapshot / export
 - [ ] Omarchy plugin

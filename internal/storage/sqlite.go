@@ -17,12 +17,21 @@ type SessionRecord struct {
 }
 
 type CommandEvent struct {
+	ID        int64
 	SessionID *int64
 	Command   string
 	Cwd       string
 	ExitCode  int
 	StartedAt time.Time
 	EndedAt   time.Time
+}
+
+type GitContext struct {
+	CommandEventID int64
+	RepositoryRoot string
+	Branch         string
+	CommitSHA      string
+	Dirty          bool
 }
 
 type Store struct {
@@ -91,6 +100,17 @@ CREATE TABLE IF NOT EXISTS command_events (
 	started_at TEXT NOT NULL,
 	ended_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS git_context (
+	command_event_id INTEGER PRIMARY KEY,
+	repository_root TEXT NOT NULL,
+	branch TEXT NOT NULL,
+	commit_sha TEXT NOT NULL,
+	dirty INTEGER NOT NULL,
+	FOREIGN KEY (command_event_id)
+		REFERENCES command_events(id)
+		ON DELETE CASCADE
+);
 `
 
 	if _, err := s.db.Exec(schema); err != nil {
@@ -110,12 +130,14 @@ CREATE TABLE IF NOT EXISTS command_events (
 		}
 	}
 
-	_, err = s.db.Exec(`
+	if _, err := s.db.Exec(`
 CREATE INDEX IF NOT EXISTS idx_command_events_session_id
 ON command_events(session_id);
-`)
+`); err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }
 
 func (s *Store) commandEventsHasSessionID() (bool, error) {
@@ -177,7 +199,7 @@ func (s *Store) EndSession(id int64, endedAt time.Time) error {
 	return err
 }
 
-func (s *Store) InsertCommandEvent(event CommandEvent) error {
+func (s *Store) InsertCommandEvent(event CommandEvent) (int64, error) {
 	const query = `
 INSERT INTO command_events (
 	session_id,
@@ -190,7 +212,7 @@ INSERT INTO command_events (
 VALUES (?, ?, ?, ?, ?, ?);
 `
 
-	_, err := s.db.Exec(
+	result, err := s.db.Exec(
 		query,
 		event.SessionID,
 		event.Command,
@@ -198,6 +220,33 @@ VALUES (?, ?, ?, ?, ?, ?);
 		event.ExitCode,
 		event.StartedAt.Format(time.RFC3339Nano),
 		event.EndedAt.Format(time.RFC3339Nano),
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.LastInsertId()
+}
+
+func (s *Store) InsertGitContext(context GitContext) error {
+	const query = `
+INSERT INTO git_context (
+	command_event_id,
+	repository_root,
+	branch,
+	commit_sha,
+	dirty
+)
+VALUES (?, ?, ?, ?, ?);
+`
+
+	_, err := s.db.Exec(
+		query,
+		context.CommandEventID,
+		context.RepositoryRoot,
+		context.Branch,
+		context.CommitSHA,
+		context.Dirty,
 	)
 
 	return err

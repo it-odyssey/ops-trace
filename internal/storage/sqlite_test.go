@@ -22,8 +22,13 @@ func TestInsertCommandEvent(t *testing.T) {
 		EndedAt:   time.Now(),
 	}
 
-	if err := store.InsertCommandEvent(event); err != nil {
+	eventID, err := store.InsertCommandEvent(event)
+	if err != nil {
 		t.Fatalf("InsertCommandEvent() returned error: %v", err)
+	}
+
+	if eventID <= 0 {
+		t.Fatalf("InsertCommandEvent() returned invalid ID: %d", eventID)
 	}
 }
 
@@ -101,8 +106,13 @@ func TestSessionQueries(t *testing.T) {
 		EndedAt:   startedAt.Add(3 * time.Second),
 	}
 
-	if err := store.InsertCommandEvent(event); err != nil {
+	eventID, err := store.InsertCommandEvent(event)
+	if err != nil {
 		t.Fatalf("InsertCommandEvent() returned error: %v", err)
+	}
+
+	if eventID <= 0 {
+		t.Fatalf("InsertCommandEvent() returned invalid ID: %d", eventID)
 	}
 
 	session, err := store.SessionByName("query-test")
@@ -137,5 +147,86 @@ func TestSessionQueries(t *testing.T) {
 
 	if events[0].ExitCode != 0 {
 		t.Errorf("exit code = %d, want 0", events[0].ExitCode)
+	}
+}
+
+func TestInsertGitContext(t *testing.T) {
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+
+	store, err := Open()
+	if err != nil {
+		t.Fatalf("Open() returned error: %v", err)
+	}
+	defer store.Close()
+
+	event := CommandEvent{
+		Command:   "git status",
+		Cwd:       "/tmp/project",
+		ExitCode:  0,
+		StartedAt: time.Now(),
+		EndedAt:   time.Now(),
+	}
+
+	eventID, err := store.InsertCommandEvent(event)
+	if err != nil {
+		t.Fatalf("InsertCommandEvent() returned error: %v", err)
+	}
+
+	context := GitContext{
+		CommandEventID: eventID,
+		RepositoryRoot: "/tmp/project",
+		Branch:         "main",
+		CommitSHA:      "abc123",
+		Dirty:          true,
+	}
+
+	if err := store.InsertGitContext(context); err != nil {
+		t.Fatalf("InsertGitContext() returned error: %v", err)
+	}
+
+	var (
+		repositoryRoot string
+		branch         string
+		commitSHA      string
+		dirty          bool
+	)
+
+	err = store.db.QueryRow(`
+SELECT
+	repository_root,
+	branch,
+	commit_sha,
+	dirty
+FROM git_context
+WHERE command_event_id = ?
+`, eventID).Scan(
+		&repositoryRoot,
+		&branch,
+		&commitSHA,
+		&dirty,
+	)
+
+	if err != nil {
+		t.Fatalf("query git context: %v", err)
+	}
+
+	if repositoryRoot != "/tmp/project" {
+		t.Errorf(
+			"repositoryRoot = %q, want %q",
+			repositoryRoot,
+			"/tmp/project",
+		)
+	}
+
+	if branch != "main" {
+		t.Errorf("branch = %q, want %q", branch, "main")
+	}
+
+	if commitSHA != "abc123" {
+		t.Errorf("commitSHA = %q, want %q", commitSHA, "abc123")
+	}
+
+	if !dirty {
+		t.Error("dirty = false, want true")
 	}
 }

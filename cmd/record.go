@@ -4,6 +4,7 @@ import (
 	"strconv"
 	"time"
 
+	gitcollector "github.com/it-odyssey/waketrail/internal/collectors/git"
 	"github.com/it-odyssey/waketrail/internal/state"
 	"github.com/it-odyssey/waketrail/internal/storage"
 	"github.com/spf13/cobra"
@@ -54,8 +55,27 @@ var recordCmd = &cobra.Command{
 			EndedAt:   time.Unix(0, recordEndedAt),
 		}
 
-		if err := store.InsertCommandEvent(event); err != nil {
+		commandEventID, err := store.InsertCommandEvent(event)
+		if err != nil {
 			return err
+		}
+
+		gitContext, err := gitcollector.Detect(recordCwd)
+		if err != nil {
+			return err
+		}
+
+		if gitContext.IsRepository {
+			err := store.InsertGitContext(storage.GitContext{
+				CommandEventID: commandEventID,
+				RepositoryRoot: gitContext.Root,
+				Branch:         gitContext.Branch,
+				CommitSHA:      gitContext.Commit,
+				Dirty:          gitContext.Dirty,
+			})
+			if err != nil {
+				return err
+			}
 		}
 
 		return nil

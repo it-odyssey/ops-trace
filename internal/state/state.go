@@ -13,12 +13,18 @@ type Session struct {
 }
 
 func statePath() (string, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
+	stateHome := os.Getenv("XDG_STATE_HOME")
+
+	if stateHome == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+
+		stateHome = filepath.Join(home, ".local", "state")
 	}
 
-	dir := filepath.Join(home, ".local", "state", "flight-recorder")
+	dir := filepath.Join(stateHome, "waketrail")
 
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return "", err

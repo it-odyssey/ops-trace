@@ -1,5 +1,7 @@
 # WakeTrail
 
+[![CI](https://github.com/it-odyssey/waketrail/actions/workflows/ci.yml/badge.svg)](https://github.com/it-odyssey/waketrail/actions/workflows/ci.yml)
+
 **A local forensic timeline for DevOps work.**
 
 **Record the wake your changes leave behind.**
@@ -197,7 +199,7 @@ Initial milestones:
 
 WakeTrail is an open-source project from **IT Odyssey**.
 
-**Seek Always A New Horizon.**
+**Embrace The Journey.**
 
 ## License
 

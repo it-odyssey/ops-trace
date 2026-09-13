@@ -7,6 +7,7 @@ import (
 )
 
 var ErrSessionNotFound = errors.New("session not found")
+var ErrGitContextNotFound = errors.New("git context not found")
 
 func (s *Store) LatestSession() (SessionRecord, error) {
 	const query = `
@@ -83,6 +84,7 @@ func (s *Store) scanSession(row *sql.Row) (SessionRecord, error) {
 func (s *Store) CommandEventsForSession(sessionID int64) ([]CommandEvent, error) {
 	const query = `
 SELECT
+	id,
 	command,
 	cwd,
 	exit_code,
@@ -109,6 +111,7 @@ ORDER BY started_at ASC;
 		)
 
 		err := rows.Scan(
+			&event.ID,
 			&event.Command,
 			&event.Cwd,
 			&event.ExitCode,
@@ -141,4 +144,40 @@ ORDER BY started_at ASC;
 	}
 
 	return events, nil
+}
+
+func (s *Store) GitContextForCommandEvent(commandEventID int64) (GitContext, error) {
+	const query = `
+SELECT
+	command_event_id,
+	repository_root,
+	branch,
+	commit_sha,
+	dirty
+FROM git_context
+WHERE command_event_id = ?;
+`
+
+	var context GitContext
+
+	err := s.db.QueryRow(
+		query,
+		commandEventID,
+	).Scan(
+		&context.CommandEventID,
+		&context.RepositoryRoot,
+		&context.Branch,
+		&context.CommitSHA,
+		&context.Dirty,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return GitContext{}, ErrGitContextNotFound
+	}
+
+	if err != nil {
+		return GitContext{}, err
+	}
+
+	return context, nil
 }

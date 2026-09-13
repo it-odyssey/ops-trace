@@ -91,6 +91,44 @@ var showCmd = &cobra.Command{
 				event.Cwd,
 			)
 
+			gitContext, err := store.GitContextForCommandEvent(event.ID)
+
+			if err != nil && !errors.Is(err, storage.ErrGitContextNotFound) {
+				return err
+			}
+
+			if err == nil {
+				commit := gitContext.CommitSHA
+
+				if len(commit) > 7 {
+					commit = commit[:7]
+				}
+
+				dirty := "clean"
+				if gitContext.Dirty {
+					dirty = "dirty"
+				}
+
+				fmt.Println()
+				fmt.Println("          git:")
+				fmt.Printf(
+					"            repo:   %s\n",
+					gitContext.RepositoryRoot,
+				)
+				fmt.Printf(
+					"            branch: %s\n",
+					gitContext.Branch,
+				)
+				fmt.Printf(
+					"            commit: %s\n",
+					commit,
+				)
+				fmt.Printf(
+					"            state:  %s\n",
+					dirty,
+				)
+			}
+
 			fmt.Println()
 		}
 

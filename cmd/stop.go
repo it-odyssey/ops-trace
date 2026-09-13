@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"github.com/it-odyssey/waketrail/internal/state"
+	"github.com/it-odyssey/waketrail/internal/storage"
 	"github.com/spf13/cobra"
 )
 
 var stopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "Stop the current flight recording session",
+	Short: "Stop the current WakeTrail recording session",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		active, err := state.HasActiveSession()
 		if err != nil {
@@ -27,7 +28,19 @@ var stopCmd = &cobra.Command{
 			return err
 		}
 
-		duration := time.Since(session.StartedAt)
+		store, err := storage.Open()
+		if err != nil {
+			return err
+		}
+		defer store.Close()
+
+		endedAt := time.Now()
+
+		if err := store.EndSession(session.ID, endedAt); err != nil {
+			return err
+		}
+
+		duration := endedAt.Sub(session.StartedAt)
 
 		if err := state.ClearSession(); err != nil {
 			return err

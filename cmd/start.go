@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/it-odyssey/waketrail/internal/state"
+	"github.com/it-odyssey/waketrail/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -13,23 +14,23 @@ var startCmd = &cobra.Command{
 	Short: "Start a new flight recording session",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		active, err := state.HasActiveSession()
+		store, err := storage.Open()
+		if err != nil {
+			return err
+		}
+		defer store.Close()
+
+		startedAt := time.Now()
+
+		sessionID, err := store.CreateSession(args[0], startedAt)
 		if err != nil {
 			return err
 		}
 
-		if active {
-			session, err := state.LoadSession()
-			if err != nil {
-				return err
-			}
-
-			fmt.Printf("A recording is already active: %s\n", session.Name)
-			return nil
-		}
 		session := state.Session{
+			ID:        sessionID,
 			Name:      args[0],
-			StartedAt: time.Now(),
+			StartedAt: startedAt,
 		}
 
 		if err := state.SaveSession(session); err != nil {

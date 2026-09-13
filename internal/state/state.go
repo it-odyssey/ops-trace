@@ -8,6 +8,7 @@ import (
 )
 
 type Session struct {
+	ID        int64     `json:"id"`
 	Name      string    `json:"name"`
 	StartedAt time.Time `json:"started_at"`
 }

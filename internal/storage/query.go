@@ -181,3 +181,66 @@ WHERE command_event_id = ?;
 
 	return context, nil
 }
+
+func (s *Store) TimelineEventsForSession(sessionID int64) ([]TimelineEvent, error) {
+	const query = `
+SELECT
+	id,
+	session_id,
+	event_type,
+	source,
+	summary,
+	occurred_at
+FROM timeline_events
+WHERE session_id = ?
+ORDER BY occurred_at ASC;
+`
+
+	rows, err := s.db.Query(query, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var events []TimelineEvent
+
+	for rows.Next() {
+		var (
+			event          TimelineEvent
+			occurredAtText string
+			storedSession  sql.NullInt64
+		)
+
+		err := rows.Scan(
+			&event.ID,
+			&storedSession,
+			&event.EventType,
+			&event.Source,
+			&event.Summary,
+			&occurredAtText,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if storedSession.Valid {
+			sessionID := storedSession.Int64
+			event.SessionID = &sessionID
+		}
+
+		occurredAt, err := time.Parse(time.RFC3339Nano, occurredAtText)
+		if err != nil {
+			return nil, err
+		}
+
+		event.OccurredAt = occurredAt
+
+		events = append(events, event)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return events, nil
+}

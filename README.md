@@ -187,13 +187,34 @@ Initial milestones:
 - [x] Git context capture
 - [x] SQLite event storage
 - [x] Session timeline output
+- [x] Generic timeline event model
+- [x] Manual timeline notes
 - [ ] Incident markers
 - [ ] Incident snapshot / export
 - [ ] Omarchy plugin
-- [ ] Docker / systemd collectors
-- [ ] Terraform / Kubernetes adapters
 - [ ] Secret and sensitive-data redaction
 - [ ] Additional shell support
+- [ ] Rolling retroactive buffer with `--retro`
+- [ ] Continuous watch mode
+- [ ] Automatic state-change detection
+- [ ] Automatic failure and recovery events
+- [ ] Window-only screenshot capture
+  - [ ] Screenshot capture will be window-only and opt-in.
+- [ ] Evidence and artifact attachments
+- [ ] Docker / Compose collector
+- [ ] systemd collector
+- [ ] Terraform / OpenTofu adapter
+- [ ] Kubernetes adapter
+- [ ] Report generation
+  - [ ] Incident report
+  - [ ] Runbook
+  - [ ] Portfolio case study
+  - [ ] Work receipt
+  - [ ] Change record
+  - [ ] troubleshooting notes
+  - [ ] customer handoff
+- [ ] Optional AI-assisted report synthesis
+- [ ] Revisit licensing and commercial model before public beta or contributions
 
 ## IT Odyssey
 

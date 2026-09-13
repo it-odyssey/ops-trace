@@ -230,3 +230,90 @@ WHERE command_event_id = ?
 		t.Error("dirty = false, want true")
 	}
 }
+
+func TestInsertTimelineEvent(t *testing.T) {
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+
+	store, err := Open()
+	if err != nil {
+		t.Fatalf("Open() returned error: %v", err)
+	}
+	defer store.Close()
+
+	startedAt := time.Now()
+
+	sessionID, err := store.CreateSession(
+		"timeline-test",
+		startedAt,
+	)
+	if err != nil {
+		t.Fatalf("CreateSession() returned error: %v", err)
+	}
+
+	event := TimelineEvent{
+		SessionID:  &sessionID,
+		EventType:  "state_change",
+		Source:     "docker",
+		Summary:    "traefik: healthy -> unhealthy",
+		OccurredAt: startedAt.Add(10 * time.Second),
+	}
+
+	eventID, err := store.InsertTimelineEvent(event)
+	if err != nil {
+		t.Fatalf("InsertTimelineEvent() returned error: %v", err)
+	}
+
+	if eventID <= 0 {
+		t.Fatalf(
+			"InsertTimelineEvent() returned invalid ID: %d",
+			eventID,
+		)
+	}
+
+	var (
+		eventType string
+		source    string
+		summary   string
+	)
+
+	err = store.db.QueryRow(`
+SELECT
+	event_type,
+	source,
+	summary
+FROM timeline_events
+WHERE id = ?
+`, eventID).Scan(
+		&eventType,
+		&source,
+		&summary,
+	)
+
+	if err != nil {
+		t.Fatalf("query timeline event: %v", err)
+	}
+
+	if eventType != "state_change" {
+		t.Errorf(
+			"eventType = %q, want %q",
+			eventType,
+			"state_change",
+		)
+	}
+
+	if source != "docker" {
+		t.Errorf(
+			"source = %q, want %q",
+			source,
+			"docker",
+		)
+	}
+
+	if summary != "traefik: healthy -> unhealthy" {
+		t.Errorf(
+			"summary = %q, want %q",
+			summary,
+			"traefik: healthy -> unhealthy",
+		)
+	}
+}

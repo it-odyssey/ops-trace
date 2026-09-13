@@ -184,7 +184,7 @@ Initial milestones:
 - [x] Bash command capture prototype
 - [x] Persistent command events
 - [x] Execution duration tracking
-- [ ] Git context capture
+- [x] Git context capture
 - [x] SQLite event storage
 - [x] Session timeline output
 - [ ] Incident markers

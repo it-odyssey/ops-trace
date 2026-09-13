@@ -34,6 +34,15 @@ type GitContext struct {
 	Dirty          bool
 }
 
+type TimelineEvent struct {
+	ID         int64
+	SessionID  *int64
+	EventType  string
+	Source     string
+	Summary    string
+	OccurredAt time.Time
+}
+
 type Store struct {
 	db *sql.DB
 }
@@ -89,6 +98,18 @@ CREATE TABLE IF NOT EXISTS sessions (
 	name TEXT NOT NULL,
 	started_at TEXT NOT NULL,
 	ended_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS timeline_events (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	session_id INTEGER,
+	event_type TEXT NOT NULL,
+	source TEXT NOT NULL,
+	summary TEXT NOT NULL,
+	occurred_at TEXT NOT NULL,
+	FOREIGN KEY (session_id)
+		REFERENCES sessions(id)
+		ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS command_events (
@@ -250,4 +271,31 @@ VALUES (?, ?, ?, ?, ?);
 	)
 
 	return err
+}
+
+func (s *Store) InsertTimelineEvent(event TimelineEvent) (int64, error) {
+	const query = `
+INSERT INTO timeline_events (
+	session_id,
+	event_type,
+	source,
+	summary,
+	occurred_at
+)
+VALUES (?, ?, ?, ?, ?);
+`
+
+	result, err := s.db.Exec(
+		query,
+		event.SessionID,
+		event.EventType,
+		event.Source,
+		event.Summary,
+		event.OccurredAt.Format(time.RFC3339Nano),
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.LastInsertId()
 }

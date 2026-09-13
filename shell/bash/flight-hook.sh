@@ -17,7 +17,17 @@ __flight_precmd() {
     local exit_code=$?
 
     if [[ -n "${FLIGHT_LAST_COMMAND:-}" ]]; then
-        echo "FLIGHT: $FLIGHT_LAST_COMMAND | exit=$exit_code"
+        local ended_at
+        ended_at="$(date +%s%N)"
+
+        go run "$FLIGHT_BIN" record \
+            --cwd "$PWD" \
+            --exit-code "$exit_code" \
+            --started-at "$FLIGHT_COMMAND_STARTED_AT" \
+            --ended-at "$ended_at" \
+            "$FLIGHT_LAST_COMMAND" \
+            >/dev/null 2>&1
+
         unset FLIGHT_LAST_COMMAND
         unset FLIGHT_COMMAND_STARTED_AT
     fi

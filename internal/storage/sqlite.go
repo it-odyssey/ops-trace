@@ -9,7 +9,15 @@ import (
 	_ "modernc.org/sqlite"
 )
 
+type SessionRecord struct {
+	ID        int64
+	Name      string
+	StartedAt time.Time
+	EndedAt   *time.Time
+}
+
 type CommandEvent struct {
+	SessionID *int64
 	Command   string
 	Cwd       string
 	ExitCode  int
@@ -67,8 +75,16 @@ func (s *Store) Close() error {
 
 func (s *Store) migrate() error {
 	const schema = `
+CREATE TABLE IF NOT EXISTS sessions (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	name TEXT NOT NULL,
+	started_at TEXT NOT NULL,
+	ended_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS command_events (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	session_id INTEGER,
 	command TEXT NOT NULL,
 	cwd TEXT NOT NULL,
 	exit_code INTEGER NOT NULL,
@@ -77,24 +93,106 @@ CREATE TABLE IF NOT EXISTS command_events (
 );
 `
 
-	_, err := s.db.Exec(schema)
+	if _, err := s.db.Exec(schema); err != nil {
+		return err
+	}
+
+	hasSessionID, err := s.commandEventsHasSessionID()
+	if err != nil {
+		return err
+	}
+
+	if !hasSessionID {
+		if _, err := s.db.Exec(
+			`ALTER TABLE command_events ADD COLUMN session_id INTEGER`,
+		); err != nil {
+			return err
+		}
+	}
+
+	_, err = s.db.Exec(`
+CREATE INDEX IF NOT EXISTS idx_command_events_session_id
+ON command_events(session_id);
+`)
+
+	return err
+}
+
+func (s *Store) commandEventsHasSessionID() (bool, error) {
+	rows, err := s.db.Query(`PRAGMA table_info(command_events)`)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			cid        int
+			name       string
+			columnType string
+			notNull    int
+			defaultVal any
+			primaryKey int
+		)
+
+		if err := rows.Scan(
+			&cid,
+			&name,
+			&columnType,
+			&notNull,
+			&defaultVal,
+			&primaryKey,
+		); err != nil {
+			return false, err
+		}
+
+		if name == "session_id" {
+			return true, nil
+		}
+	}
+
+	return false, rows.Err()
+}
+
+func (s *Store) CreateSession(name string, startedAt time.Time) (int64, error) {
+	result, err := s.db.Exec(
+		`INSERT INTO sessions (name, started_at) VALUES (?, ?)`,
+		name,
+		startedAt.Format(time.RFC3339Nano),
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return result.LastInsertId()
+}
+
+func (s *Store) EndSession(id int64, endedAt time.Time) error {
+	_, err := s.db.Exec(
+		`UPDATE sessions SET ended_at = ? WHERE id = ?`,
+		endedAt.Format(time.RFC3339Nano),
+		id,
+	)
+
 	return err
 }
 
 func (s *Store) InsertCommandEvent(event CommandEvent) error {
 	const query = `
 INSERT INTO command_events (
+	session_id,
 	command,
 	cwd,
 	exit_code,
 	started_at,
 	ended_at
 )
-VALUES (?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?);
 `
 
 	_, err := s.db.Exec(
 		query,
+		event.SessionID,
 		event.Command,
 		event.Cwd,
 		event.ExitCode,

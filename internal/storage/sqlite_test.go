@@ -75,3 +75,67 @@ func TestCreateAndEndSession(t *testing.T) {
 		t.Error("ended_at is empty")
 	}
 }
+
+func TestSessionQueries(t *testing.T) {
+	t.Setenv("XDG_STATE_HOME", t.TempDir())
+
+	store, err := Open()
+	if err != nil {
+		t.Fatalf("Open() returned error: %v", err)
+	}
+	defer store.Close()
+
+	startedAt := time.Now().Truncate(time.Second)
+
+	sessionID, err := store.CreateSession("query-test", startedAt)
+	if err != nil {
+		t.Fatalf("CreateSession() returned error: %v", err)
+	}
+
+	event := CommandEvent{
+		SessionID: &sessionID,
+		Command:   "git status",
+		Cwd:       "/tmp/query-test",
+		ExitCode:  0,
+		StartedAt: startedAt.Add(2 * time.Second),
+		EndedAt:   startedAt.Add(3 * time.Second),
+	}
+
+	if err := store.InsertCommandEvent(event); err != nil {
+		t.Fatalf("InsertCommandEvent() returned error: %v", err)
+	}
+
+	session, err := store.SessionByName("query-test")
+	if err != nil {
+		t.Fatalf("SessionByName() returned error: %v", err)
+	}
+
+	if session.ID != sessionID {
+		t.Errorf("session ID = %d, want %d", session.ID, sessionID)
+	}
+
+	if session.Name != "query-test" {
+		t.Errorf("session name = %q, want %q", session.Name, "query-test")
+	}
+
+	events, err := store.CommandEventsForSession(sessionID)
+	if err != nil {
+		t.Fatalf("CommandEventsForSession() returned error: %v", err)
+	}
+
+	if len(events) != 1 {
+		t.Fatalf("got %d events, want 1", len(events))
+	}
+
+	if events[0].Command != "git status" {
+		t.Errorf(
+			"command = %q, want %q",
+			events[0].Command,
+			"git status",
+		)
+	}
+
+	if events[0].ExitCode != 0 {
+		t.Errorf("exit code = %d, want 0", events[0].ExitCode)
+	}
+}
